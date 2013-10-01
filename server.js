@@ -4,18 +4,20 @@ var http = require('http');
 var zlib = require('zlib');
 var Stream = require('stream')
 var cluster = require('cluster')
+var os = require('os')
 
 if (cluster.isMaster) {
   // Fork workers.
-  for (var i = 0; i < 4; i++) {
+  for (var i = 0; i < os.cpus().length; i++) {
     cluster.fork();
   }
+  console.log('Server running at http://172.31.17.237:80/');
 } else {
   http.createServer(function (req, res) {
     var url = require('url');
     var url_parts = url.parse(req.url, true);
     var query = url_parts.query;
- 
+
     var acceptEncoding = req.headers['accept-encoding'];
     if (!acceptEncoding) {
       acceptEncoding = '';
@@ -25,7 +27,7 @@ if (cluster.isMaster) {
     var headers = {'Content-Type': 'text/html; charset=UTF-8'};
     if (isGzip) {
       headers['Content-Encoding'] = 'gzip';
-    }  
+    }
 
 
     setTimeout(function(length, isGzip, res){
@@ -37,6 +39,6 @@ if (cluster.isMaster) {
         res.end(plain);
       }
     }, query.dither?query.dither:0, query.length, isGzip, res);
-  }).listen(8081, 'localhost');
+  }).listen(80, '172.31.17.237');
+  console.log('Forking process for core');
 }
-console.log('Server running at http://localhost:8081/');
