@@ -14,7 +14,7 @@ var DEFAULT_RESPONSE_LENGTH = 16;
  * 
  * @param probability argument (0 < p < 1)
  * @param shape shape parameter (>0)
- * @param scale scale parameter (>0, "minimum income")
+ * @param scale scale parameter (>0, "minimum")
  *
  * @return icdf value
  */
