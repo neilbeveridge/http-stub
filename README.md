@@ -26,7 +26,7 @@ http-stub provides two different algorithms for determining response length and 
 
 Respond as quickly as possible with a constant 5000B response payload:
 ```
-http://localhost:8081?length=5000
+http://localhost:8081/?length=5000
 ```
 
 Notice the response headers indicating the dither and response length profile used:
@@ -39,7 +39,7 @@ stub.response.length: 5000
 
 Respond after the specified dither latency:
 ```
-http://localhost:8081?dither=350&length=5000
+http://localhost:8081/?dither=350&length=5000
 ```
 
 Notice the response headers indicating the dither and response length profile used:
@@ -54,7 +54,13 @@ stub.response.length: 5000
 
 Respond as quickly as possible with a Pareto-distributed response payload length, starting at 5000B:
 ```
-http://localhost:8081?response_pareto_min=5000
+http://localhost:8081/?response_pareto_min=5000
+
+Indicative Latency Distribution
+  50%    3.16ms
+  75%    8.10ms
+  90%   11.17ms
+  99%   15.22ms
 ```
 
 Notice the response headers indicating the dither and response length profile used:
@@ -67,7 +73,13 @@ stub.response.length: 5713
 
 Respond as quickly as possible with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
-http://localhost:8081?response_pareto_min=5000&response_pareto_shape=15
+http://localhost:8081/?response_pareto_min=5000&response_pareto_shape=15
+
+Indicative Latency Distribution
+  50%    4.94ms
+  75%    6.98ms
+  90%    9.31ms
+  99%   36.06ms
 ```
 
 Notice the response headers indicating the dither and response length profile used:
@@ -80,7 +92,13 @@ stub.response.length: 5092
 
 Respond with a 250ms minimum latency, governed by a thick tail Pareto Distribution with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
-http://localhost:8081?response_pareto_min=5000&response_pareto_shape=15&dither_pareto_min=250
+http://localhost:8081/?response_pareto_min=5000&response_pareto_shape=15&dither_pareto_min=250
+
+Indicative Latency Distribution
+  50%  275.88ms
+  75%  312.95ms
+  90%  368.47ms
+  99%  536.04ms
 ```
 
 Notice the response headers indicating the dither and response length profile used:
@@ -93,7 +111,13 @@ stub.response.length: 5127
 
 Respond with a 250ms minimum latency, governed by a very thick tail Pareto Distribution with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
-http://localhost:8081?response_pareto_min=5000&response_pareto_shape=15&dither_pareto_min=250&dither_pareto_shape=2
+http://localhost:8081/?response_pareto_min=5000&response_pareto_shape=15&dither_pareto_min=250&dither_pareto_shape=2
+
+Indicative Latency Distribution
+  50%  370.09ms
+  75%  647.80ms
+  90%    1.50s 
+  99%    3.60s
 ```
 
 Notice the response headers indicating the dither and response length profile used:
