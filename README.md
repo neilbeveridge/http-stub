@@ -40,10 +40,7 @@ stub.response.length: 5000
 Respond after the specified dither latency:
 ```
 http://localhost:8081/?dither=350&length=5000
-```
 
-Notice the response headers indicating the dither and response length profile used:
-```
 stub.dither.function :constant: 350ms
 stub.dither.ms: 350
 stub.response.function: constant: 5000
@@ -56,15 +53,6 @@ Respond as quickly as possible with a Pareto-distributed response payload length
 ```
 http://localhost:8081/?response_pareto_min=5000
 
-Indicative Latency Distribution
-  50%    3.16ms
-  75%    8.10ms
-  90%   11.17ms
-  99%   15.22ms
-```
-
-Notice the response headers indicating the dither and response length profile used:
-```
 stub.dither.function: none
 stub.dither.ms: 0
 stub.response.function: pareto: { min : 5000, shape : 7 }
@@ -75,15 +63,6 @@ Respond as quickly as possible with a Pareto-distributed response payload length
 ```
 http://localhost:8081/?response_pareto_min=5000&response_pareto_shape=15
 
-Indicative Latency Distribution
-  50%    4.94ms
-  75%    6.98ms
-  90%    9.31ms
-  99%   36.06ms
-```
-
-Notice the response headers indicating the dither and response length profile used:
-```
 stub.dither.function: none
 stub.dither.ms: 0
 stub.response.function: pareto: { min : 5000, shape : 15 }
@@ -94,6 +73,11 @@ Respond with a 250ms minimum latency, governed by a thick tail Pareto Distributi
 ```
 http://localhost:8081/?response_pareto_min=5000&response_pareto_shape=15&dither_pareto_min=250
 
+stub.dither.function: pareto: { min : 250, shape : 7 }
+stub.dither.ms: 256
+stub.response.function: pareto: { min : 5000, shape : 15 }
+stub.response.length: 5127
+
 Indicative Latency Distribution
   50%  275.88ms
   75%  312.95ms
@@ -101,29 +85,18 @@ Indicative Latency Distribution
   99%  536.04ms
 ```
 
-Notice the response headers indicating the dither and response length profile used:
-```
-stub.dither.function: pareto: { min : 250, shape : 7 }
-stub.dither.ms: 256
-stub.response.function: pareto: { min : 5000, shape : 15 }
-stub.response.length: 5127
-```
-
 Respond with a 250ms minimum latency, governed by a very thick tail Pareto Distribution with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
 http://localhost:8081/?response_pareto_min=5000&response_pareto_shape=15&dither_pareto_min=250&dither_pareto_shape=2
+
+stub.dither.function: pareto: { min : 250, shape : 2 }
+stub.dither.ms: 507
+stub.response.function: pareto: { min : 5000, shape : 15 }
+stub.response.length: 5574
 
 Indicative Latency Distribution
   50%  370.09ms
   75%  647.80ms
   90%    1.50s 
   99%    3.60s
-```
-
-Notice the response headers indicating the dither and response length profile used:
-```
-stub.dither.function: pareto: { min : 250, shape : 2 }
-stub.dither.ms: 507
-stub.response.function: pareto: { min : 5000, shape : 15 }
-stub.response.length: 5574
 ```
