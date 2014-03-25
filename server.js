@@ -48,14 +48,14 @@ function requestHandler (req, res) {
     var pareto_min = query.dither_pareto_min;
     
     dither = Math.round (randomParetoQuantile (pareto_shape, pareto_min));
-    headers['hcom.dither.function'] = "pareto: { min : "+pareto_min+", shape : "+pareto_shape+" }";
+    headers['stub.dither.function'] = "pareto: { min : "+pareto_min+", shape : "+pareto_shape+" }";
   } else if (query.dither) {
     dither = query.dither;
-    headers['hcom.dither.function'] = "constant: "+dither+"ms";
+    headers['stub.dither.function'] = "constant: "+dither+"ms";
   } else {
-    headers['hcom.dither.function'] = "none";
+    headers['stub.dither.function'] = "none";
   }
-  headers['hcom.dither.ms'] = dither+"";
+  headers['stub.dither.ms'] = dither+"";
   
   var responseLength = DEFAULT_RESPONSE_LENGTH;
   if (query.response_pareto_min) {
@@ -63,14 +63,14 @@ function requestHandler (req, res) {
     var pareto_min = query.response_pareto_min;
     
     responseLength = Math.round (randomParetoQuantile (pareto_shape, pareto_min));
-    headers['hcom.response.function'] = "pareto: { min : "+pareto_min+", shape : "+pareto_shape+" }";
+    headers['stub.response.function'] = "pareto: { min : "+pareto_min+", shape : "+pareto_shape+" }";
   } else if (query.length) {
     responseLength = query.length;
-    headers['hcom.response.function'] = "constant: "+responseLength;
+    headers['stub.response.function'] = "constant: "+responseLength;
   } else {
-    headers['hcom.response.function'] = "none";
+    headers['stub.response.function'] = "none";
   }
-  headers['hcom.response.length'] = responseLength+"";
+  headers['stub.response.length'] = responseLength+"";
 
   setTimeout(function (dither, length, isGzip, res) {
     res.writeHead(200, headers);
