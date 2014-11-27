@@ -102,4 +102,4 @@ Indicative Latency Distribution
   99%    3.60s
 ```
 ### Accessing Histogram Metrics over HTTP
-JSON Histogram metrics are provided as JSON over HTTP for Dither and Magnitude. A Histogram is created for each distinct set of query parameters which yield a logically different behaviour. For example, a request for the same Pareto Dither Distribution will always be reported in the same histogram and a request for a constant dither will always be reported in the same histogram, with similar requests.
+JSON Histogram metrics are provided as JSON over HTTP for Dither and Magnitude. A Histogram is created for each distinct set of query parameters which yield a logically different behaviour. For example, a request for the same Pareto Dither Distribution will always be reported in Histogram A, whilst a request for a Constant Dither 50ms will always be reported in Histogram B, with its 50ms brothers.
