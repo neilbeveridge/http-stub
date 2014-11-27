@@ -8,7 +8,7 @@ Launches a process per-core to process HTTP requests on the given port, binding 
 
 ## Run 
 ```
-node server.js ${port}
+node server.js ${stub-port} ${metrics-port}
 ```
 
 ## Use
