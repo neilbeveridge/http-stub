@@ -103,3 +103,72 @@ Indicative Latency Distribution
 ```
 ### Accessing Histogram Metrics over HTTP
 JSON Histogram metrics are provided as JSON over HTTP for Dither and Magnitude. A Histogram is created for each distinct set of query parameters which yield a logically different behaviour. For example, a request for the same Pareto Dither Distribution will always be reported in Histogram A, whilst a request for a Constant Dither 50ms will always be reported in Histogram B, with its 50ms brothers.
+```
+http://localhost:9091/metrics
+
+{
+latency-pareto-7-1000-payload-pareto-7-500: {
+dither: {
+type: "histogram",
+min: 1038,
+max: 1038,
+sum: 1038,
+variance: null,
+mean: 1038,
+std_dev: null,
+count: 1,
+median: 1038,
+p75: 1038,
+p95: 1038,
+p99: 1038,
+p999: 1038
+},
+magnitude: {
+type: "histogram",
+min: 506,
+max: 506,
+sum: 506,
+variance: null,
+mean: 506,
+std_dev: null,
+count: 1,
+median: 506,
+p75: 506,
+p95: 506,
+p99: 506,
+p999: 506
+}
+},
+latency-0-payload-16: {
+dither: {
+type: "histogram",
+min: 6,
+max: 6,
+sum: 6,
+variance: null,
+mean: 6,
+std_dev: null,
+count: 1,
+median: 6,
+p75: 6,
+p95: 6,
+p99: 6,
+p999: 6
+},
+magnitude: {
+type: "histogram",
+min: 16,
+max: 16,
+sum: 16,
+variance: null,
+mean: 16,
+std_dev: null,
+count: 1,
+median: 16,
+p75: 16,
+p95: 16,
+p99: 16,
+p999: 16
+}
+}
+}
