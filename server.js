@@ -54,7 +54,7 @@ var METRICS_EXPONENTIAL_DECAY = 10000;
  }
 
  function toMetricNamespace (latencyConfig, payloadConfig) {
-     return 'latency-' + serialiseStubConfig (latencyConfig) + '-payload-' + serialiseStubConfig (payloadConfig);
+     return 'dither-' + serialiseStubConfig (latencyConfig) + '-magnitude-' + serialiseStubConfig (payloadConfig);
  }
 
 

@@ -107,68 +107,69 @@ JSON Histogram metrics are provided as JSON over HTTP for Dither and Magnitude. 
 http://localhost:9091/metrics
 
 {
-latency-pareto-7-1000-payload-pareto-7-500: {
-dither: {
-type: "histogram",
-min: 1038,
-max: 1038,
-sum: 1038,
-variance: null,
-mean: 1038,
-std_dev: null,
-count: 1,
-median: 1038,
-p75: 1038,
-p95: 1038,
-p99: 1038,
-p999: 1038
-},
-magnitude: {
-type: "histogram",
-min: 506,
-max: 506,
-sum: 506,
-variance: null,
-mean: 506,
-std_dev: null,
-count: 1,
-median: 506,
-p75: 506,
-p95: 506,
-p99: 506,
-p999: 506
+    dither-pareto-7-1000-magnitude-pareto-7-500: {
+        dither: {
+            type: "histogram",
+            min: 1757,
+            max: 1757,
+            sum: 1757,
+            variance: null,
+            mean: 1757,
+            std_dev: null,
+            count: 1,
+            median: 1757,
+            p75: 1757,
+            p95: 1757,
+            p99: 1757,
+            p999: 1757
+        },
+        magnitude: {
+            type: "histogram",
+            min: 502,
+            max: 502,
+            sum: 502,
+            variance: null,
+            mean: 502,
+            std_dev: null,
+            count: 1,
+            median: 502,
+            p75: 502,
+            p95: 502,
+            p99: 502,
+            p999: 502
+        }
+    },
+    dither-0-magnitude-16: {
+        dither: {
+            type: "histogram",
+            min: 4,
+            max: 4,
+            sum: 4,
+            variance: null,
+            mean: 4,
+            std_dev: null,
+            count: 1,
+            median: 4,
+            p75: 4,
+            p95: 4,
+            p99: 4,
+            p999: 4
+            },
+        magnitude: {
+            type: "histogram",
+            min: 16,
+            max: 16,
+            sum: 16,
+            variance: null,
+            mean: 16,
+            std_dev: null,
+            count: 1,
+            median: 16,
+            p75: 16,
+            p95: 16,
+            p99: 16,
+            p999: 16
+        }
+    }
 }
-},
-latency-0-payload-16: {
-dither: {
-type: "histogram",
-min: 6,
-max: 6,
-sum: 6,
-variance: null,
-mean: 6,
-std_dev: null,
-count: 1,
-median: 6,
-p75: 6,
-p95: 6,
-p99: 6,
-p999: 6
-},
-magnitude: {
-type: "histogram",
-min: 16,
-max: 16,
-sum: 16,
-variance: null,
-mean: 16,
-std_dev: null,
-count: 1,
-median: 16,
-p75: 16,
-p95: 16,
-p99: 16,
-p999: 16
-}
-}
-}
+```
