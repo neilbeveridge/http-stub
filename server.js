@@ -88,13 +88,13 @@ function requestHandler (req, res) {
   
   var payloadConfig = toStubConfig (query, 'magnitude', DEFAULT_RESPONSE_LENGTH);
   if (payloadConfig.pareto) {
-    headers['stub.response.function'] = "pareto: { min : "+payloadConfig.pareto_min+", shape : "+payloadConfig.pareto_shape+" }";
+    headers['stub.magnitude.function'] = "pareto: { min : "+payloadConfig.pareto_min+", shape : "+payloadConfig.pareto_shape+" }";
   } else if (payloadConfig.constant) {
-    headers['stub.response.function'] = "constant: "+payloadConfig.value;
+    headers['stub.magnitude.function'] = "constant: "+payloadConfig.value;
   } else {
-    headers['stub.response.function'] = "none";
+    headers['stub.magnitude.function'] = "none";
   }
-  headers['stub.response.length'] = payloadConfig.value+"";
+  headers['stub.magnitude.length'] = payloadConfig.value+"";
 
   setTimeout(function (dither, length, isGzip, res) {
     res.writeHead(200, headers);
