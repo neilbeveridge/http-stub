@@ -19,7 +19,7 @@ var METRICS_EXPONENTIAL_DECAY = 10000;
  * 
  * @param probability argument (0 < p < 1)
  * @param shape shape parameter (>0)
- * @param scale scale parameter (>0, "minimum")
+ * @param scale scale parameter (>0)
  *
  * @return icdf value
  */
@@ -146,9 +146,9 @@ if (cluster.isMaster) {
 
   console.log('Stub server master process ' + process.pid + ' starting.');
   console.log('Starting http stub:\t' + stubPort);
-  console.log('Starting http metrics\t' + metricsPort);
+  console.log('Starting http metrics:\t' + metricsPort);
   console.log('Spawning an event loop worker for each of '+os.cpus().length+' cores');
 } else {
  http.createServer(requestHandler).listen(stubPort);
- console.log('Worker ' + process.pid + ' has started.');
+ console.log('Worker ' + process.pid + ' has started\t[OK]');
 }
