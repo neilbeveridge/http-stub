@@ -22,8 +22,8 @@ var MESSAGE_PAUSE_CREATE = 'pause-create';
 var MESSAGE_METRIC = 'metric';
 
 var PARAM_NAME = "name";
-var PARAM_PAUSE_MS = "pause-ms";
-var PARAM_PAUSE_CHANCE = "pause-chance";
+var PARAM_PAUSE_MS = "pause-%-ms";
+var PARAM_PAUSE_CHANCE = "pause-%-chance";
 
 var instance_pauses = {}
 
@@ -37,7 +37,20 @@ function isPaused (name) {
     return false;
 }
 
-function shouldPause (name, time, chance, ms) {
+function shouldPause (query, startTime) {
+    var i = 1;
+    var name = query[PARAM_NAME];
+    var pause;
+    while (ms = query[PARAM_PAUSE_MS.replace('%', i)]) {
+        var chance = query[PARAM_PAUSE_CHANCE.replace('%', i)];
+        pause = _shouldPause(name, i, startTime, chance, ms);
+        i++;
+    }
+
+    return pause;
+}
+
+function _shouldPause (name, index, time, chance, ms) {
     if (! name) {
         return false;
     }
@@ -50,18 +63,17 @@ function shouldPause (name, time, chance, ms) {
 
     // should a new pause occur?
     if (Math.random() <= chance) { // yes
-        return createPause(name, time, ms);
+        createPause(name, index, time, ms);
     }
 
     return false;
 }
 
-function createPause (name, start, ms) {
+function createPause (name, index, start, ms) {
     var end = (+start) + (+ms);
     var pause = {
-        name: name, start: +start, end: +end, ms: +ms
+        name: name, start: +start, end: +end, ms: +ms, index: index
     };
-    pause.remains = _remainingFunction(pause);
     _pauseCreate (pause);
     return pause;
 }
@@ -79,10 +91,104 @@ function _pauseRecordLocal (msg) {
     //console.log(process.pid + ' :: received pause notification from ' + msg.origin)
     var pause = msg.pause;
     pause.remains = _remainingFunction(pause);
-    instance_pauses[pause.name] = pause;
+    if (! instance_pauses[pause.name]) {
+        instance_pauses[pause.name] = [];
+        instance_pauses[pause.name].remains = _remainingGlobalFunction(instance_pauses[pause.name]);
+        instance_pauses[pause.name].elapsedInRange = _totalElapsedPauseInTimeFunction(instance_pauses[pause.name]);
+        instance_pauses[pause.name].identity = pause.start + ',' + pause.end;
+    }
+    instance_pauses[pause.name].push(pause);
 }
 function _remainingFunction (pause) {
-    return function (now) { return now >= pause.end ? 0 : pause.end - now }
+    return function (now) { return now >= pause.end ? 0 : pause.end - now };
+}
+function _remainingGlobalFunction (pauses) {
+    return function (now) {
+        var remains = pauses.reduce(function(u,v){ return Math.max(u, v.remains(now)) }, 0);
+        return remains;
+    };
+}
+function _totalElapsedPauseInTimeFunction (pauses) {
+    return function (from, to) {
+        var pausesInRange = pauses.filter(function (pause) {
+            return pause.start > from
+        })
+        if (pausesInRange.length > 0) {
+
+            /*var now = 100000;
+             pauses = [
+             {start: now-12000, end: now-9000, identity: (now-10000) + ',' + (now-9000)},
+             {start: now-8000, end: now-7000, identity: (now-8000) + ',' + (now-7000)},
+             {start: now-11000, end: now-3000, identity: (now-11000) + ',' + (now-3000)},
+             {start: now-15000, end: now-14000, identity: (now-15000) + ',' + (now-14000)}
+             ]*/
+
+            var elapsed = _computeElapsedTimeFromRanges(pausesInRange)
+            return elapsed;
+        }
+    };
+}
+
+function _computeElapsedTimeFromRanges (pauses) {
+    if (pauses.length == 1) {
+        return pauses[0].end - pauses[0].start;
+    } else if (pauses.length == 0) {
+        return 0;
+    }
+
+    // compute adjacency sorted by vertex edge count
+    var adjacency = [];
+    for (var i=0; i<pauses.length; i++) {
+        // does anything overlap with this island?
+        var edges = []
+        for (var j=0; j<pauses.length; j++) {
+            // not the same
+            if (pauses[i].start != pauses[j].start && pauses[i].end != pauses[j].end) {
+                if (_overlappingPauses(pauses[i], pauses[j])) {
+                    edges.push([pauses[i], pauses[j]]);
+                }
+            }
+        }
+        if (edges.length > 0) adjacency.push(edges)
+    }
+    adjacency = adjacency.sort(function(a,b){return b.length-a.length});
+
+    // find distinct edge adjacency optimising for largest vertex edge number
+    var islands = [];
+    var seen = [];
+    for (var i=0; i<adjacency.length; i++) {
+        // haven't seen this pause yet
+        var vertexSeen = false;
+        adjacency[i].map(function(edge){ if (seen.indexOf(edge[0].identity) != -1 || seen.indexOf(edge[1].identity) != -1) vertexSeen = true; })
+        if (!vertexSeen) {
+            adjacency[i].map(function(edge){ seen.push(edge[0].identity); seen.push(edge[1].identity); })
+            islands.push(adjacency[i])
+        }
+    }
+
+    // find difference with pauses to add vertices without edges
+    islands = islands.concat(pauses.filter(function(pause){ return seen.indexOf(pause.identity) == -1 }).map(function(pause){ return [[pause, false]] }));
+
+    // find the start and end of each island
+    var spans = [];
+    for (var i=0; i<islands.length; i++) {
+        var island = [];
+        for (var j=0; j<islands[i].length; j++) {
+            island.push(islands[i][j][0])
+            if (islands[i][j][1]) {
+                island.push(islands[i][j][1])
+            }
+        }
+        spans.push({start: island.reduce(function(u,v){ return Math.min(u, v.start) }, Infinity), end: island.reduce(function(u,v){ return Math.max(u, v.end) }, -Infinity)})
+    }
+
+    // sum the pause lengths of each island to give the total elapsed time
+    return spans.map(function(span){ return span.end-span.start }).reduce(function(u,v){ return u+v })
+}
+
+function _overlappingPauses (p1, p2) {
+    // not separate
+    return ! (p1.end < p2.start || p1.start > p2.end);
 }
 
 /**
@@ -146,7 +252,7 @@ function requestHandler (req, res) {
 
     var proceed = function (pause) { processRequest( { query: query, headers: req.headers, start: startTime, path: req.url, pause: pause }, res) };
 
-    var pause = shouldPause(query[PARAM_NAME], startTime, query[PARAM_PAUSE_CHANCE], query[PARAM_PAUSE_MS]);
+    var pause = shouldPause(query, startTime);
     if (pause) {
         var remaining = pause.remains(startTime);
         console.log(process.pid + " :: new request paused for : " + remaining + "ms")
@@ -203,11 +309,13 @@ function processRequest (request, res) {
 
         // do we need to add any additional latency where a pause started after the request start?
         var pause = isPaused(request.query[PARAM_NAME]);
+
         if (pause) {
-            // this pause started after the request began so we need to account for it
-            if (pause.start > request.start) {
+            var elapsedPause = pause.elapsedInRange(request.start, Date.now());
+
+            if (elapsedPause > 0) {
                 var timeSoFar = Date.now() - request.start;
-                var timeRequired = dither + pause.ms;
+                var timeRequired = dither + elapsedPause;
                 var timeLeft = timeRequired - timeSoFar;
 
                 if (timeLeft > 0) {
@@ -252,7 +360,7 @@ function sendResponse (metricNamespace, headers, startTime, length, isGzip, res)
 
 function updateHistogram (namespace, name, value) {
     // Send message to master process.
-    process.send({type: 'metric', name: namespace + '.' + name, value: value});
+    process.send({type: MESSAGE_METRIC, name: namespace + '.' + name, value: value});
 }
 
 var stubPort = process.argv[2]?parseInt(process.argv[2]):DEFAULT_SERVER_PORT;
