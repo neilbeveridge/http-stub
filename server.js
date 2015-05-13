@@ -213,10 +213,13 @@ function toStubConfig (query, prefix, defaultValue) {
     rtn.pareto = rtn.constant = false;
     rtn.value = defaultValue;
 
-    if (query[prefix+'_pareto_min']) {
+    var pareto_min = query[prefix+'-pareto-min'] ? query[prefix+'-pareto-min'] : query[prefix+'_pareto_min'] ? query[prefix+'_pareto_min'] : false;
+    var pareto_shape = query[prefix+'-pareto-shape'] ? query[prefix+'-pareto-shape'] : query[prefix+'_pareto_shape'] ? query[prefix+'_pareto_shape'] : false;
+
+    if (pareto_min) {
         rtn.pareto = true;
-        rtn.pareto_shape = query[prefix+'_pareto_shape'] ? query[prefix+'_pareto_shape'] : DEFAULT_PARETO_SHAPE;
-        rtn.pareto_min = query[prefix+'_pareto_min'];
+        rtn.pareto_shape = pareto_shape ? pareto_shape : DEFAULT_PARETO_SHAPE;
+        rtn.pareto_min = pareto_min;
         rtn.value = Math.round (randomParetoQuantile (rtn.pareto_shape, rtn.pareto_min));
     } else if (query[prefix]) {
         rtn.constant = true;
@@ -255,7 +258,7 @@ function requestHandler (req, res) {
     var pause = shouldPause(query, startTime);
     if (pause) {
         var remaining = pause.remains(startTime);
-        console.log(process.pid + " :: new request paused for : " + remaining + "ms")
+        //console.log(process.pid + " :: new request paused for : " + remaining + "ms")
         setTimeout(proceed.bind(this, remaining), remaining);
     } else {
         proceed();
@@ -299,36 +302,39 @@ function processRequest (request, res) {
     }
 
     var dither = latencyConfig.value;
-
     var metricNamespace = toMetricNamespace(latencyConfig, payloadConfig);
+    var respond = function(){sendResponse (metricNamespace, headers, request.start, payloadConfig.value, isGzip, res)};
+    var doRespond = respond;
 
     // wait for dither
-    setTimeout(function(){
-        var respond = function(){sendResponse (metricNamespace, headers, request.start, payloadConfig.value, isGzip, res)};
-        var doRespond = respond;
+    if (dither>0) {
+        setTimeout(function () {
 
-        // do we need to add any additional latency where a pause started after the request start?
-        var pause = isPaused(request.query[PARAM_NAME]);
+            // do we need to add any additional latency where a pause started after the request start?
+            var pause = isPaused(request.query[PARAM_NAME]);
 
-        if (pause) {
-            var elapsedPause = pause.elapsedInRange(request.start, Date.now());
+            if (pause) {
+                var elapsedPause = pause.elapsedInRange(request.start, Date.now());
 
-            if (elapsedPause > 0) {
-                var timeSoFar = Date.now() - request.start;
-                var timeRequired = dither + elapsedPause;
-                var timeLeft = timeRequired - timeSoFar;
+                if (elapsedPause > 0) {
+                    var timeSoFar = Date.now() - request.start;
+                    var timeRequired = dither + elapsedPause;
+                    var timeLeft = timeRequired - timeSoFar;
 
-                if (timeLeft > 0) {
-                    doRespond = function () {
-                        console.log(process.pid + ' :: in-flight request paused for ' + timeLeft + "ms")
-                        headers['stub.' + request.query[PARAM_NAME] + '.pause'] = timeLeft + (request.pause ? pause : 0);
-                        setTimeout(respond, timeLeft)
+                    if (timeLeft > 0) {
+                        doRespond = function () {
+                            //console.log(process.pid + ' :: in-flight request paused for ' + timeLeft + "ms")
+                            headers['stub.' + request.query[PARAM_NAME] + '.pause'] = timeLeft + (request.pause ? pause : 0);
+                            setTimeout(respond, timeLeft)
+                        }
                     }
                 }
             }
-        }
+            doRespond();
+        }, dither);
+    } else {
         doRespond();
-    }, dither);
+    }
 
 }
 

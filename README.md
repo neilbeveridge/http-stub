@@ -3,6 +3,7 @@ Launches a process per-core to process HTTP requests on the given port, binding 
 
 - The behaviour of the stub can be changed per-request by setting HTTP Request parameters.
 - IO and dither is asynchronous.
+- Supports arbitrarily many non-deterministic pauses asynchronously for independent virtual origins.
 - The response will be GZIP'd if the accept-encoding request header contains 'gzip'.
 - Provides Coda Hale Metrics Histogram port data over HTTP for dither and payload magnitude observed by the server.
 
@@ -52,7 +53,7 @@ stub.magnitude.length: 5000
 
 Respond as quickly as possible with a Pareto-distributed response payload length, starting at 5000B:
 ```
-http://localhost:8081/?magnitude_pareto_min=5000
+http://localhost:8081/?magnitude-pareto-min=5000
 
 stub.dither.function: none
 stub.dither.ms: 0
@@ -62,7 +63,7 @@ stub.magnitude.length: 5713
 
 Respond as quickly as possible with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
-http://localhost:8081/?magnitude_pareto_min=5000&magnitude_pareto_shape=15
+http://localhost:8081/?magnitude-pareto-min=5000&magnitude-pareto-shape=15
 
 stub.dither.function: none
 stub.dither.ms: 0
@@ -72,7 +73,7 @@ stub.magnitude.length: 5092
 
 Respond with a 250ms minimum latency, governed by a thick tail Pareto Distribution with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
-http://localhost:8081/?magnitude_pareto_min=5000&magnitude_pareto_shape=15&dither_pareto_min=250
+http://localhost:8081/?magnitude-pareto-min=5000&magnitude-pareto-shape=15&dither-pareto-min=250
 
 stub.dither.function: pareto: { min : 250, shape : 7 }
 stub.dither.ms: 256
@@ -88,7 +89,7 @@ Indicative Latency Distribution
 
 Respond with a 250ms minimum latency, governed by a very thick tail Pareto Distribution with a Pareto-distributed response payload length, starting at 5000B with a narrow tail:
 ```
-http://localhost:8081/?magnitude_pareto_min=5000&magnitude_pareto_shape=15&dither_pareto_min=250&dither_pareto_shape=2
+http://localhost:8081/?magnitude-pareto-min=5000&magnitude-pareto-shape=15&dither-pareto-min=250&dither-pareto-shape=2
 
 stub.dither.function: pareto: { min : 250, shape : 2 }
 stub.dither.ms: 507
@@ -101,6 +102,23 @@ Indicative Latency Distribution
   90%    1.50s 
   99%    3.60s
 ```
+
+### Adding Pauses
+- Supports creation of distinct virtual origins, each of which can be configured with a number of pause behaviours.
+- Pauses may overlap.
+- When a pause occurs in a virtual origin, all other requests arriving or in-flight to that virtual origin are suspended during the pause.
+- May be combined with dither and payload settings as normal.
+
+Add a 30ms pause with a 0.1% chance of occurring.
+```
+http://localhost:8081/?name=origin-foo&pause-1-ms=30&pause-1-chance=0.001
+```
+
+Add an additional pause occurring less often but for longer, simulating a compacting GC.
+```
+http://localhost:8081/?name=origin-foo&pause-1-ms=30&pause-1-chance=0.001&pause-2-ms=5000&pause-2-chance=0.000001
+```
+
 ### Accessing Histogram Metrics over HTTP
 JSON Histogram metrics are provided as JSON over HTTP for Dither and Magnitude. A Histogram is created for each distinct set of query parameters which yield a logically different behaviour. For example, a request for the same Pareto Dither Distribution will always be reported in Histogram A, whilst a request for a Constant Dither 50ms will always be reported in Histogram B, with its 50ms brothers.
 ```
