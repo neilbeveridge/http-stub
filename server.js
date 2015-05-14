@@ -30,6 +30,16 @@ var instance_pauses = {}
 // DebugTracer prints traces to stdout
 //tracers.pushTracer(new tracers.DebugTracer(process.stdout));
 
+function guid() {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+            .toString(16)
+            .substring(1);
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+        s4() + '-' + s4() + s4() + s4();
+}
+
 function isPaused (name) {
     if (instance_pauses[name]) {
         return instance_pauses[name];
@@ -91,13 +101,20 @@ function _pauseRecordLocal (msg) {
     //console.log(process.pid + ' :: received pause notification from ' + msg.origin)
     var pause = msg.pause;
     pause.remains = _remainingFunction(pause);
+    pause.guid = guid()
+    //pause.identity = pause.start + ',' + pause.end;
     if (! instance_pauses[pause.name]) {
         instance_pauses[pause.name] = [];
         instance_pauses[pause.name].remains = _remainingGlobalFunction(instance_pauses[pause.name]);
         instance_pauses[pause.name].elapsedInRange = _totalElapsedPauseInTimeFunction(instance_pauses[pause.name]);
-        instance_pauses[pause.name].identity = pause.start + ',' + pause.end;
     }
     instance_pauses[pause.name].push(pause);
+
+    // an attempt at memory management - remove pauses after the pause time has passed plus the maximum recorded dither
+    // TODO: don't rely on max dither of all requests but instead max dither on the virtual origin
+    setTimeout(function(){
+        instance_pauses[pause.name].splice(instance_pauses[pause.name].indexOf(pause), 1)
+    }, _maxDither + pause.ms)
 }
 function _remainingFunction (pause) {
     return function (now) { return now >= pause.end ? 0 : pause.end - now };
@@ -114,17 +131,7 @@ function _totalElapsedPauseInTimeFunction (pauses) {
             return pause.start > from
         })
         if (pausesInRange.length > 0) {
-
-            /*var now = 100000;
-             pauses = [
-             {start: now-12000, end: now-9000, identity: (now-10000) + ',' + (now-9000)},
-             {start: now-8000, end: now-7000, identity: (now-8000) + ',' + (now-7000)},
-             {start: now-11000, end: now-3000, identity: (now-11000) + ',' + (now-3000)},
-             {start: now-15000, end: now-14000, identity: (now-15000) + ',' + (now-14000)}
-             ]*/
-
-            var elapsed = _computeElapsedTimeFromRanges(pausesInRange)
-            return elapsed;
+            return _computeElapsedTimeFromRanges(pausesInRange);
         }
     };
 }
@@ -159,15 +166,15 @@ function _computeElapsedTimeFromRanges (pauses) {
     for (var i=0; i<adjacency.length; i++) {
         // haven't seen this pause yet
         var vertexSeen = false;
-        adjacency[i].map(function(edge){ if (seen.indexOf(edge[0].identity) != -1 || seen.indexOf(edge[1].identity) != -1) vertexSeen = true; })
+        adjacency[i].map(function(edge){ if (seen.indexOf(edge[0].guid) != -1 || seen.indexOf(edge[1].guid) != -1) vertexSeen = true; })
         if (!vertexSeen) {
-            adjacency[i].map(function(edge){ seen.push(edge[0].identity); seen.push(edge[1].identity); })
+            adjacency[i].map(function(edge){ seen.push(edge[0].guid); seen.push(edge[1].guid); })
             islands.push(adjacency[i])
         }
     }
 
-    // find difference with pauses to add vertices without edges
-    islands = islands.concat(pauses.filter(function(pause){ return seen.indexOf(pause.identity) == -1 }).map(function(pause){ return [[pause, false]] }));
+    // find difference between all pauses array and pauses appearing in the adjacency array to add vertices without edges
+    islands = islands.concat(pauses.filter(function(pause){ return seen.indexOf(pause.guid) == -1 }).map(function(pause){ return [[pause, false]] }));
 
     // find the start and end of each island
     var spans = [];
@@ -235,6 +242,13 @@ function serialiseStubConfig (stubConfig) {
 
 function toMetricNamespace (latencyConfig, payloadConfig) {
     return 'dither-' + serialiseStubConfig (latencyConfig) + '-magnitude-' + serialiseStubConfig (payloadConfig);
+}
+
+var _maxDither = 0;
+function registerDither(dither) {
+    if (dither > _maxDither) {
+        _maxDither = dither;
+    }
 }
 
 function requestHandler (req, res) {
@@ -308,6 +322,8 @@ function processRequest (request, res) {
 
     // wait for dither
     if (dither>0) {
+        registerDither(dither)
+
         setTimeout(function () {
 
             // do we need to add any additional latency where a pause started after the request start?
